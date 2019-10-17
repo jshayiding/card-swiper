@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    
+    </head>
+    <body>
+        
+        <br></br>
+        <p>Swipe your I-card in the input box: </p>
+        <input id = "text" type="text" oninput="getText()">
+        <p id = "total"> Total Characters: 0</p>
+        <p id = "status"> Status: Please Swipe Card</p>
+        <p id = "uinID">UIN: </p>
+        <p id="prefix">Prefix: </p>
+        
+
+        <!-- Manual Entery and Upload of User Data -->
+        
+        <p>Manually enter UIN if card swipe not applicable:</p>
+        <form id = "manualForm">
+            UIN:<br>
+            <input type="text" id="uinInput" value="" required minLength="9" maxLength="9" >
+            <br>
+            <button id="checkinBtn"  type="button" onclick="checkId()">Manual Checkin</button>
+        </form> 
+        <br>
+        <button id = "resetButton" onclick="resetFields()" >Reset</button> 
+        <br></br>
+
+        <div id = "userInfo" ><u>User Info: </u></div>
+
+        <!-- Upload CSV button and Download JSON file button-->
+        <p>Select local CSV File:</p>
+         <input id="csv" type="file">
+         <output id="out"> input file content</output>
+        <a id="myButton" href="#">Download CSV</button>
+
+
+
+    </body>
+    <script rel="javascript" type="text/javascript" href="js/jquery-1.11.3.min.js"></script>
+    
+   
+
+
+   <script>
+
+       document.getElementById('uinInput').onkeypress = function(e) {
+           if(e.keyCode == 13) {
+                checkId();
+                e.preventDefault();
+                return false;
+           }
+       }
+
+        /* Resets all the fields when reset button is pressed */
+        function resetFields(){
+            document.getElementById("text").value = "";
+            document.getElementById("total").innerHTML = "Total Characters: 0";
+            document.getElementById("status").innerHTML = "Status: Please Swipe Card";
+            document.getElementById("uinID").innerHTML = "UIN: ";
+            document.getElementById("prefix").innerHTML = "Prefix: ";
+            document.getElementById("userInfo").innerHTML = "<u>User Info: </u>";
+            document.getElementById("uinInput").value = "";
+        }
+
+        
+        function checkId(){
+            var typedUIN = document.getElementById('uinInput').value;
+            console.log(typedUIN.length);
+            if (typedUIN.length == 9){
+                    
+                    loadDoc(typedUIN);
+
+            }
+                
+        }
+        function getText(){
+            var textInput = document.getElementById('text').value;
+            textInput = textInput.replace(/\s/g, ''); 
+            count(textInput);
+            
+        }
+        function count(textInput){
+            var total = textInput;
+            total = total.replace(/\s/g, '');
+            document.getElementById("total").innerHTML="Total Characters: " + (total.length);
+            
+            statusUpdate(total.length , total); 
+
+        }
+            
+        function statusUpdate(len , text){ //Param is the number of characters in the input field
+    
+            var maxLength = 79; //Total amount of characters for a successful card swipe
+            var prefix = text.toString().substring(0, 2); //obtains the prefix characters of the input (ex. %B)  
+
+
+            //TODO check creat diagram
+            document.getElementById("prefix").innerHTML= "Prefix: " + prefix;
+
+                if (len == 0){ 
+                    document.getElementById("status").innerHTML="Status: " + "Please Swipe Card";
+                }
+                if (len == maxLength && prefix == "%B"){
+                    document.getElementById("status").innerHTML="Status: " + "Success"; //Card was read properly
+                    getUIN(text); //Calls the function getUIN() to obtain the UIN substring
+                }
+                else{
+                    document.getElementById("status").innerHTML="Status: " + "Error, please swipe again"; //Card did NOT read properly
+                }
+        }
+
+        /* 
+         * called if UIN is obtainable 
+         * searches UIN in the database,
+         * displays info for matching UIN
+
+         */ 
+         function getUIN(text){
+            var uin = text.substring(54, 63); //Obtains the string of the UIN
+            document.getElementById("uinID").innerHTML="UIN: " + uin;
+
+            //AJAX call , searches UIN, pull info 
+           
+            loadDoc(uin); //loads data from json file
+        }
+
+
+        function updateJson(){
+            var filePath = "/Users/christiancardenas/Desktop/Git Repositories/cardReader/test1.json";
+            var jsonData = System.IO.File.ReadAllText(filePath);
+            // De-serialize to object or create new list
+            var studentList = JsonConvert.DeserializeObject(jsonData);
+            console.log(studentList);
+
+        }
+
+
+        /*
+         * Opens the JSON file and does a 
+         * search to find a match to the passed UIN.
+         * Displays appropriate information based on 
+         * search results
+         */
+        function loadDoc(uinNum){
+            console.log(uinNum);
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    
+                    var json = JSON.parse(this.responseText);
+                    var jsonString = JSON.stringify(this.responseText, null, 4);
+                    console.log(jsonString);
+                    
+
+                    var i;
+                    
+                    /* Searches the JSON file for matching UIN number */
+                    for (i = 0; i < json.length; i++){
+
+                        /* When match is found, display information about the user associated to the UIN */
+                        if (json[i].uin == uinNum){ 
+                            document.getElementById("userInfo").innerHTML = "<u>User Info: </u>"; 
+                            document.getElementById("userInfo").innerHTML += "<br>Name: " + json[i].studentInfo["firstName"]  + " " + json[i].studentInfo["middleName"] + " " + json[i].studentInfo["lastName"];
+                            document.getElementById("userInfo").innerHTML += "<br>UIN: " + json[i].uin;
+                            document.getElementById("userInfo").innerHTML += "<br>RSVP: " + json[i].studentInfo["rsvpStatus"];
+                            break; //Match is found, stop search
+                        }
+                        else{
+                            document.getElementById("userInfo").innerHTML = "<u>User Info: </u>" + "** User Not Found **";
+                        }     
+                    }
+    
+                }
+            };
+            xhttp.open("GET", "test1.json", true);  //opens and gets the contents from json file
+            xhttp.send();
+        }
+
+        /**********************************************/
+        //TODO upload and download functionality
+
+        function convertToJson(inputCsv) { //inputCsv passed from readfile function
+        /* Split input string by `,` and clean up each item */
+        //const arrayCsv = inputCsv.split(',').map(s => s.replace(/"/gi, '').trim())
+        var lines = inputCsv.split('\n');
+        lines.splice(0,1);
+
+        var arrayCsv = [];
+        for (var line = 0; line < lines.length; line++){
+            const lineArray = lines[line].split(',').map(s => s.replace(/"/gi, '').trim());
+            lineArray.splice(0,1);
+
+            arrayCsv[line] = lineArray;
+        }
+        
+
+        const outputJson = [];
+
+        console.log(arrayCsv);
+        var n = arrayCsv.length;
+
+        /* Iterate through input csv at increments of 6, to capture entire CSV row 
+           per iteration */
+        for (var m = 0; m < arrayCsv.length; m++){
+                
+                var uin = arrayCsv[m][3]; //Obtains uin from the csv file line
+                
+                for (var i = 0; i < arrayCsv[m].length; i+=3) {
+              
+                /* Extract CSV data for current row, and assign to named variables */
+
+                var [firstName, middleName, lastName] =
+                arrayCsv[m].slice(i, i + 3);
+                /* Populate structured JSON entry for this CSV row */
+               
+                outputJson.push({
+                            uin: uin,
+                            studentInfo: {
+                                firstName,
+                                middleName,
+                                lastName,
+                                rsvpStatus: "true",
+                                checkin: "false"
+                            } 
+                });
+                break;
+                } //end of for loop
+        }
+        return outputJson;
+    }
+     
+    
+      var jsonString; //1.
+      var fileInput = document.getElementById("csv"),
+        readFile = function() {
+          var reader = new FileReader();
+          reader.onload = function() {
+            const result = convertToJson(reader.result)
+            document.getElementById('out').innerHTML = JSON.stringify(result);
+            
+            jsonString = JSON.stringify(result, null, 4); //2.
+
+            //pass to the download function 
+            downloadCSV(jsonString); 
+        
+          };
+          // start reading the file. When it is done, calls the onload event defined above.
+          reader.readAsBinaryString(fileInput.files[0]);
+        };
+      fileInput.addEventListener('change', readFile);
+
+        
+        console.log(jsonString); //3.
+
+      // Convert JSON to csv and then download
+      function download(JSONstring){
+            document.getElementById('myButton').onclick = function(event){
+                var json = JSONstring;
+                blob = new Blob([json], {type: "octet/stream"});
+                url = window.URL.createObjectURL(blob);
+                this.href = url;
+                this.target = '_blank';
+                this.download = 'newCopy.json';
+            }
+      }
+
+      function ConvertToCSV(objArray) {
+            var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+            var str = '';
+
+            console.log(array);
+            console.log(objArray);
+            for (var i = 0; i < array.length; i++) {
+                var line = '';
+                for (var index in array[i]) {
+                    if (line != '') line += ','
+                    line += array[i][index];
+                    if (i == 1){
+                        //Now enter student data
+                        var line = '';
+                        console.log("key value" , array[i][index]);
+                        var studentInfo = array[i][index];
+                    
+                    }
+                }
+
+                str += line + '\r\n';
+            }
+            console.log(str);
+            return str;
+        }
+
+      function downloadCSV(JSONstring){
+          document.getElementById('myButton').onclick = function(event){
+              var json = JSON.parse(JSONstring);
+              
+              /*
+              var fields = Object.keys(json[0]);
+              var replacer = function(key, value){
+                  return value === null ? '' : value
+              }
+              var csv = json.map(function(row){
+                  return fields.map(function(fieldName){
+                      return JSON.stringify(row[fieldName], replacer)
+                  }).join(',')
+              })
+              csv.unshift(fields.join(',')) //add header column
+              var csvContent = csv.join('\r\n');
+              */
+              
+            var csvContent = ConvertToCSV(json);
+
+              blob = new Blob([csvContent], {type: "octet/stream"});
+                url = window.URL.createObjectURL(blob);
+                this.href = url;
+                this.target = '_blank';
+                this.download = 'newCopy.csv';
+            
+        }
+      }
+      
+
+
+
+        //TODO automate updating of json file
+        
+
+
+    </script>
+
+
+</html>

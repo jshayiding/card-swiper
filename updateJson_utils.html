@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <form id = "manualForm">
+            UIN:<br>
+            <input type="text" id="uinInput" value="" required minLength="9" maxLength="9" >
+            <br>
+            <button id="checkinBtn"  type="button" onclick="checkId()">Manual Checkin</button>
+    </form>
+    <script>
+        // TODO begin: create a simple html server using express js
+        var path = require('path');
+        var express = require('express');
+        var app = express();
+        var staticPath = path.join(__dirname, '/public');
+        app.use(express.static(staticPath));
+        app.listen(3000, function() {
+        console.log('listening');
+        });
+
+        // TODO end: creating html server
+
+        // TODO begin: update values in json files
+        var fs = require('fs');
+        var fileName = './file.json';
+        var file = require(fileName);
+        file.key = "new value";
+
+        fs.writeFile(fileName, JSON.stringify(file), function (err) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(file));
+        console.log('writing to ' + fileName);
+        });
+        
+        // TODO end: update json file 
+
+        // TODO begin: call server with ajax call
+        //fetch('http://example.com/movies.json')
+        fetch('/Users/christiancardenas/Desktop/Git Repositories/cardReader/test1.json')
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(myJson) {
+            console.log(JSON.stringify(myJson));
+        });
+
+        // TODO end: call server with Ajax call
+    </script>
+ </body>
+</html>

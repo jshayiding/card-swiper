@@ -1,0 +1,33 @@
+[
+    {
+        "uin": "668913328",
+        "studentInfo": {
+           "firstName": "JURAT",
+           "middleName": "",
+           "lastName": "SHAYIDING",
+           "rsvpStatus": "false",
+           "checkin": "true"
+      }
+    },
+    {
+        "uin": "670168300",
+        "studentInfo": {
+             "firstName": "Jonathan",
+             "middleName": "Samson",
+             "lastName": "Rowe",
+             "rsvpStatus": "true",
+             "checkin": "true"
+        }
+     },
+     {
+        "uin": "670168228",
+        "studentInfo": {
+             "firstName": "Christian",
+             "middleName": "Aspilla",
+             "lastName": "Cardenas",
+             "rsvpStatus": "false",
+             "checkin": "false"
+        }
+     }
+]
+

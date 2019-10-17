@@ -1,0 +1,123 @@
+<!DOC HTML>
+<html>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <body>
+        <p>Manually enter UIN if card swipe not applicable:</p>
+        <form id="manualForm">
+        UIN:<br>
+        <input type="text" id="uinInput" value="" required minLength="9" maxLength="9">
+        <br>
+        <button id="checkinBtn" type="button" onclick="checkId()">Manual Checkin</button>
+        </form>
+        <p>Select local CSV File:</p>
+        <input id="csv" type="file">
+        <output id="out"> input file content</output>
+    
+        <div id="userInfo"><u>User Info: </u></div>
+    </body>
+    <script>
+        document.getElementById('uinInput').onkeypress = function(e) {
+            if (e.keyCode == 13) {
+                checkId();
+                e.preventDefault();
+                return false;
+            }
+        }
+        function checkId() {
+        var typedUIN = document.getElementById('uinInput').value;
+        console.log(typedUIN.length);
+        if (typedUIN.length == 9) {
+
+            loadDoc(typedUIN);
+
+        }
+        }
+
+        function loadDoc(uinNum) {
+        console.log(uinNum);
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+            var json = JSON.parse(this.responseText);
+            var jsonString = JSON.stringify(this.responseText, null, 4);
+            console.log(json);
+
+            /* Searches the JSON file for matching UIN number */
+            var foundEntry = json.find(function(row) {
+                return row.uin == uinNum;
+            })
+
+            if (foundEntry) {
+                foundEntry.studentInfo["checkin"] = true;
+                document.getElementById("userInfo").innerHTML = "<u>User Info: </u>";
+                document.getElementById("userInfo").innerHTML += "<br>Name: " + foundEntry.studentInfo["firstName"] + " " + foundEntry.studentInfo["middleName"] + " " + foundEntry.studentInfo["lastName"];
+                document.getElementById("userInfo").innerHTML += "<br>UIN: " + foundEntry.uin;
+                document.getElementById("userInfo").innerHTML += "<br>RSVP: " + foundEntry.studentInfo["rsvpStatus"];
+            } else {
+                json.push({
+                uin: uinNum.toString(),
+                studentInfo: {
+                    rsvpStatus: false,
+                    Checkin: true
+                } //  empty object, you can fill it with data you need
+                });
+                document.getElementById("userInfo").innerHTML = "<u>User Info: </u>" + "** User Not Found **";
+            }
+            
+            console.log(json)
+            }
+        };
+        xhttp.open("GET", "https://gist.githubusercontent.com/extempl/40cc998d1624dd0130871a3c5f1d0256/raw/2136b294baff1f7b611523dce91c5e9b8006d7e2/test.json", true); //opens and gets the contents from json file
+        xhttp.send();
+        }
+        //
+        function convertToJson(inputCsv) { //inputCsv passed from readfile function
+        /* Split input string by `,` and clean up each item */
+        //const arrayCsv = inputCsv.split(',').map(s => s.replace(/"/gi, '').trim())
+        var lines = inputCsv.split('\n');
+        lines.splice(0,1);
+
+        var arrayCsv = [];
+        for (var line = 0; line < lines.length; line++){
+            const lineArray = lines[line].split(',').map(s => s.replace(/"/gi, '').trim());
+            lineArray.splice(0,1);
+
+            arrayCsv[line] = lineArray;
+        }
+        
+
+        const outputJson = [];
+
+        console.log(arrayCsv);
+        var n = arrayCsv.length;
+
+        /* Iterate through input csv at increments of 6, to capture entire CSV row 
+           per iteration */
+        for (var m = 0; m < arrayCsv.length; m++){
+                for (let i = 0; i < arrayCsv[m].length; i += 6) {
+                /* Extract CSV data for current row, and assign to named variables */
+                const [date, firstName, middleName, lastName, uin, rsvpStatus] =
+                arrayCsv.slice(i, i + 6);
+                
+
+                /* Populate structured JSON entry for this CSV row */
+                
+                outputJson.push({
+                        uin: {},
+                        studentInfo: {
+                        firstName,
+                        middleName,
+                        lastName,
+                        rsvpStatus
+                        }
+                });
+                
+                } //end of for loop
+               
+        }
+      
+        console.log(outputJson);
+        return outputJson;
+    }
+    </script>
+</html>
